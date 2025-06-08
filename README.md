@@ -1,7 +1,19 @@
 # AlgorithmList
 
-### Translation and Formal README Draft
+本仓库收录了我在学习算法过程中整理的题解与笔记，题目主要来源于 AcWing、LeetCode、Codeforces 等平台。所有内容均以 Markdown 形式按专题分类，方便查阅和复习。
 
-------
+## 主要内容
+- **BFS DFS 排列组合.md**：搜索算法及排列组合相关题目
+- **位运算.md**：常见位运算技巧与应用
+- **前缀和.md**、**差分.md**：前缀和与差分模型
+- **动态规划.md**：各类 DP 模型及习题
+- **并查集.md**：并查集基础与拓展
+- **图论.md**、**树.md**：图结构与树形算法
+- **字符串.md**：字符串匹配及处理
+- **数位 DP.md**、**数论.md**：数位 DP 与基础数论
+- **贪心.md**、**滑动窗口.md**：常见算法思想
+- **扫描线 线段树.md**、**ST.md**、**Trie.md**：数据结构与高级算法
+- **Hot100.md**：精选 100 道典型题目
+- **模板题.md**、**自用结论.md**：常用模板与总结
 
-This repository contains a curated list of algorithm problems that I have compiled from the time I started learning algorithms up until now. The selection represents high-quality problems that I consider particularly insightful or challenging. The problems are primarily sourced from AcWing, LeetCode, and Codeforces.
+题解中涉及的配图存放在 `images/` 目录下。仓库仍在持续更新，如有问题或建议欢迎提出 Issue 或 Pull Request。
