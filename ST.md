@@ -406,3 +406,185 @@ class Solution:
 | `ans += st[-1][1]`       | 以 **块内任意旧位置作“首”**、`x` 作“尾”形成的新合法子数组 |      |
 | `st[-1][1] += 1`         | 把 `x` 的出现次数合并到块里                               |      |
 | `else: st.append([x,1])` | 新值更小，单独开一块                                      |      |
+
+
+
+
+
+## [最大公约数](https://www.lanqiao.cn/courses/51805/learning/?id=4072920&compatibility=false)
+
+**难度：** 中等
+**标签：** 数论 · GCD · 滑动窗口 · 二分 · 稀疏表
+
+------
+
+### 题意与思路
+
+给定长度为 N 的正整数数组 `A`，每一步你可以选择一对相邻元素 `(A[i],A[i+1])`，并把其中一个替换成它们的 `gcd`。问最少多少步可以把整个数组都变成 1，若不可能则输出 -1。
+
+**核心分两种情况：**
+
+1. **数组中已有 1**
+   - 记 `cnt1 = A.count(1)`。任何非 1 元素都可与相邻的 1 一次操作变成 1（因为 gcd(1,x)=1）。
+   - 因此只要把剩下的 `N−cnt1` 个非 1 元素都变为 1，即需操作 `N − cnt1` 步。
+2. **数组中无 1**
+   1. 先“造”出第一个 1：
+      - 找到最短的子数组 `A[i..j]` 使得 `gcd(A[i..j]) == 1`，长度 `L = j−i+1`。
+      - 对这段做 `L−1` 次相邻 gcd 操作，就能把它折叠出一个 1。
+   2. 然后再把剩余的 `N−1` 个元素变为 1，需要额外 `N−1` 步。
+   3. 总共操作数 = `(L−1) + (N−1) = L + N − 2`。
+
+如果**全局 gcd > 1**，则永远造不出 1，答案 `-1`。
+
+------
+
+### 寻找最短 子数组 `gcd=1`
+
+- **滑动窗口（双指针）**
+
+  - 对每个起点 `i`，令 `cur=0`，向右扩 `j` 并做 `cur = gcd(cur, A[j])`，直到 `cur==1`。维护最小 `L=j−i+1`。
+  - 时间复杂度 `O(N·log C)`（`C≈10⁹`），在 `N≤10⁵` 下可行。
+
+- **稀疏表＋二分**
+
+  1. 用 Sparse Table 预处理区间 gcd，`O(N log N)` 建表，`O(1)` 查询。
+
+  2. 对每个 `i`：
+
+     - **剪枝**：先 `if gcd(A[i..N−1])!=1: continue`。
+
+     - 否则在 `[i..N−1]` 上二分最小 `j` 使 `gcd(A[i..j])==1`：
+
+       ```python
+       lo, hi = i, N-1
+       while lo < hi:
+           mid = (lo + hi) // 2         # 注意：要用 //(优先级高于>>)
+           if query_gcd(i, mid) == 1:
+               hi = mid
+           else:
+               lo = mid + 1
+       L = lo - i + 1
+       ```
+
+  3. 取所有 `L` 的最小值。
+
+**遇到的典型坑：**
+
+- 二分时要**固定起点 `i`**，别误用 `lo` 作为查询左边界。
+- 最外层要先检查后缀 gcd 是否为 1，否则从 `i` 出发永远搜不到子段。
+
+------
+
+### 代码
+
+```python
+'''
+Author: NEFU AB-IN
+Date: 2025-03-29 10:10:56
+FilePath: \LeetCode\test\test2.py
+LastEditTime: 2025-06-13 20:39:06
+'''
+# 3.8.6 import
+import bisect
+from collections import Counter, defaultdict, deque, namedtuple
+from datetime import datetime, timedelta
+from functools import lru_cache, reduce
+from heapq import heapify, heappop, heappush, heappushpop, heapreplace, nlargest, nsmallest
+from itertools import combinations, compress, permutations, groupby, accumulate
+from math import ceil, floor, fabs, gcd, log, exp, sqrt, hypot, inf
+from string import ascii_lowercase, ascii_uppercase
+from bisect import bisect_left, bisect_right, insort
+from sys import exit, setrecursionlimit, stdin
+from typing import Any, Callable, Dict, List, Optional, Tuple, Deque
+from random import randint
+
+# Constants
+N = int(2e5 + 10)
+M = int(20)
+INF = int(1e12)
+OFFSET = int(100)
+MOD = int(1e9 + 7)
+
+# Set recursion limit
+setrecursionlimit(int(1e7))
+
+
+class Arr:
+    array = staticmethod(lambda x=0, size=N: [x() if callable(x) else x for _ in range(size)])
+    array2d = staticmethod(lambda x=0, rows=N, cols=M: [Arr.array(x, cols) for _ in range(rows)])
+    graph = staticmethod(lambda size=N: [[] for _ in range(size)])
+
+
+class Math:
+    max = staticmethod(lambda a, b: a if a > b else b)
+    min = staticmethod(lambda a, b: a if a < b else b)
+
+
+class IO:
+    input = staticmethod(lambda: stdin.readline().strip())
+    read = staticmethod(lambda: map(int, IO.input().split()))
+    read_list = staticmethod(lambda: list(IO.read()))
+    read_mixed = staticmethod(lambda *types: [t(v) for t, v in zip(types, IO.input().split())])
+
+
+class Std:
+    class SparseTable:
+        def __init__(self, data: List, func=lambda x, y: x | y):
+            self.func = func
+            self.st = [list(data)]
+            i, n = 1, len(self.st[0])
+            while 2 * i <= n:
+                pre_ = self.st[-1]
+                self.st.append([func(pre_[j], pre_[j + i]) for j in range(n - 2 * i + 1)])
+                i <<= 1
+
+        def query(self, begin: int, end: int) -> int:
+            lg = (end - begin + 1).bit_length() - 1
+            return self.func(self.st[lg][begin], self.st[lg][end - (1 << lg) + 1])
+
+# ————————————————————— Division line ——————————————————————
+
+
+def solve():
+    n, = IO.read()
+    arr = IO.read_list()
+
+    cnt_1 = arr.count(1)
+    if cnt_1 > 0:
+        print(n - cnt_1)
+        return
+
+    st = Std.SparseTable(arr, gcd)
+    if st.query(0, n - 1) > 1:
+        print(-1)
+        return
+
+    def check(l, r):
+        return st.query(l, r) == 1
+
+    ans = INF
+
+    for i in range(n):
+        l, r = i, n - 1
+        if check(l, r) != 1:
+            continue
+
+        while l < r:
+            mid = l + r >> 1
+            if check(i, mid):
+                r = mid
+            else:
+                l = mid + 1
+        L = r - i + 1
+        m = n - 1
+        ans = Math.min(ans, L + m - 1)
+    print(ans)
+
+
+if __name__ == "__main__":
+    solve()
+
+```
+
+- **总体**：`O(N log N + N · 1 · log N) = O(N log N)`，`N≤10⁵`可行。
+- **注意**：二分中要固定起点 `i`，并用 `//` 计算中点，外层先做后缀 gcd 剪枝。
