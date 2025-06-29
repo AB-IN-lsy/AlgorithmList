@@ -693,3 +693,119 @@ class Solution:
 ### 一句话总结重点
 
 把“往返一次”转化为“两个人同步出发到终点”，用 `t+j+k = constant` 压掉一维后做三维 DP；4 个转移、合法性校验，再加“同格不重摘”即可得到 `O(n³)` 解。
+
+
+
+
+
+
+
+## [子2023](https://www.lanqiao.cn/courses/51805/learning/?id=4093712&compatibility=false)
+
+**难度：** 中等 
+**标签：** DP、记忆化搜索、子序列计数  
+
+---
+
+### 题意与思路
+
+给定一个字符串序列  
+```
+
+S = "12345678910111213...20222023"
+
+```
+我们想要统计有多少种【不要求连续】地从 S 中选出子序列，使得拼起来正好等于 `"2023"`。
+
+- 这是一个典型的「长文本 + 短模式串」的子序列计数问题。  
+- 我们用记忆化搜索（DFS + `lru_cache`）来做：  
+  1. 维护状态 `(i, j)`，表示当前在 S 的第 `i` 个字符处，已经匹配到模式串 P 的第 `j` 个字符。  
+  2. 每一步可做两件事：  
+     - **跳过** S[i]： 走到 `(i+1, j)`  
+     - **匹配** S[i] == P[j]：走到 `(i+1, j+1)`  
+  3. 用 `@lru_cache` 缓存每个 `(i,j)` 的结果，确保全局只访问大约 `O(|S|×|P|)` 个不同状态。  
+  4. 边界：  
+     - 若 `j == len(P)`，说明 P 已全部匹配，返回 `1` 种方案。  
+     - 若 `i == len(S)` 还没匹配完 P，则返回 `0`。  
+
+这种写法符合「先试跳过，再试匹配」的思路，代码结构清晰，易读易写。
+
+---
+
+### 代码
+
+```python
+# -*- coding: utf-8 -*-
+import sys
+from functools import lru_cache
+
+# Python 3.8.6 支持，提升递归深度
+sys.setrecursionlimit(int(1e7))
+
+def count_2023_subseq_memo(S: str) -> int:
+    P = "2023"
+    n, m = len(S), len(P)
+
+    @lru_cache(None)
+    def dfs(i: int, j: int) -> int:
+        # 如果已经全匹配，算作一种方案
+        if j == m:
+            return 1
+        # 主串走到末尾还没匹配完，方案无效
+        if i == n:
+            return 0
+
+        # 1) 跳过 S[i]
+        res = dfs(i+1, j)
+        # 2) 如果 S[i] == P[j]，拿它当配对字符
+        if S[i] == P[j]:
+            res += dfs(i+1, j+1)
+        return res
+
+    return dfs(0, 0)
+
+if __name__ == "__main__":
+    # 构造 S = "1","2","3",...,"2023" 拼接后的长串
+    S = "".join(str(i) for i in range(1, 2024))
+    ans = count_2023_subseq_memo(S)
+    print(ans)
+# 运行后输出（即子序列“2023”的总方案数）：
+5484660609
+```
+
+------
+
+
+
+```python
+def solve():
+
+    s = str("".join(map(str, range(1, 2024))))
+
+    cnt_ = [Counter() for _ in range(len(s))]
+
+    for i in range(len(s)):
+        cnt_[i] = cnt_[i - 1]
+        if s[i] == '2':
+            cnt_[i]['2'] += 1
+            cnt_[i]['202'] += cnt_[i]['20']
+        if s[i] == '0':
+            cnt_[i]['20'] += cnt_[i]['2']
+        if s[i] == '3':
+            cnt_[i]['2023'] += cnt_[i]['202']
+
+    print(cnt_[len(s) - 1]['2023'])
+
+    return
+```
+
+
+
+
+
+**点评：**
+
+- 记忆化搜索用递归把问题拆成「跳过 / 匹配」两种决策，思考简单。
+- 借助 `lru_cache`，状态访问上限约为 `|S|×|P|≈7000×4`，实测秒级内可完成。
+- 如果担心递归性能，也可改用「倒序滚动数组」的迭代 DP 版本，复杂度同样为 `O(|S|·|P|)`。
+

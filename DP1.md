@@ -685,7 +685,7 @@ class Solution:
 
 
 **难度：中等**
- **标签：01 背包、子集划分、组合优化**
+**标签：01 背包、子集划分、组合优化**
 
 ------
 
@@ -866,7 +866,7 @@ print(dp[n][k])
 
 ------
 
-### Python 代码（3.8.6 可直接 AC）
+### Python 代码
 
 ```python
 import sys
@@ -1179,5 +1179,4 @@ class Solution:
 
         return dfs(0, 0, 2)
 ```
-
 
